@@ -1,0 +1,53 @@
+server:
+  port: 8081  # Puerto fijo para desarrollo
+
+spring:
+  application:
+    name: product-service
+  
+  # H2 Database (embebida, perfecta para estudiantes)
+  datasource:
+    url: jdbc:h2:mem:productdb
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop  # Crea tablas al inicio, las borra al cerrar
+    show-sql: true
+    properties:
+      hibernate:
+        '[format_sql]': true
+    defer-datasource-initialization: true
+  
+  h2:
+    console:
+      enabled: true  # Consola web en /h2-console
+      path: /h2-console
+
+# Registro en Eureka
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+  instance:
+    prefer-ip-address: true
+    instance-id: ${spring.application.name}:${server.port}
+
+# Actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+# Logging
+logging:
+  level:
+    '[com.ecommerce.productservice]': DEBUG
+    '[org.springframework.cloud]': DEBUG
