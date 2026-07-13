@@ -21,6 +21,7 @@ public class ProductService {
         return productRepository.findAll();
     }
 
+    @Transactional
     public Product findById(String id) {
         return productRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Product not found: " + id));
@@ -58,6 +59,22 @@ public class ProductService {
     public Product updateStock(String id, Integer quantity) {
         Product product = findById(id);
         product.setStockQuantity(quantity);
+        return productRepository.save(product);
+    }
+
+    @Transactional
+    public Product decrementStock(String id, Integer amount) {
+        Product product = findById(id);
+
+        int newStock = product.getStockQuantity() - amount;
+        if (newStock < 0) {
+            throw new IllegalStateException(
+                    String.format("Insufficient stock for product %s. Available: %d, Requested: %d",
+                            id, product.getStockQuantity(), amount)
+            );
+        }
+
+        product.setStockQuantity(newStock);
         return productRepository.save(product);
     }
 }

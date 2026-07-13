@@ -19,7 +19,7 @@ spring:
     show-sql: true
     properties:
       hibernate:
-        '[format_sql]': true
+        format_sql: true
     defer-datasource-initialization: true
   
   h2:
@@ -49,5 +49,5 @@ management:
 # Logging
 logging:
   level:
-    '[com.ecommerce.productservice]': DEBUG
-    '[org.springframework.cloud]': DEBUG
+    com.ecommerce.productservice: DEBUG
+    org.springframework.cloud: DEBUG

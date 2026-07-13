@@ -64,6 +64,17 @@ public class ProductController {
         return ResponseEntity.ok(productService.updateStock(id, quantity));
     }
 
+    @PatchMapping("/{id}/stock/decrement")
+    public ResponseEntity<Product> decrementStock(
+            @PathVariable String id,
+            @RequestBody Map<String, Integer> request) {
+        Integer amount = request.get("amount");
+        if (amount == null || amount <= 0) {
+            throw new IllegalArgumentException("Amount must be positive");
+        }
+        return ResponseEntity.ok(productService.decrementStock(id, amount));
+    }
+
     // Health check endpoint personalizado
     @GetMapping("/health")
     public ResponseEntity<Map<String, String>> health() {
