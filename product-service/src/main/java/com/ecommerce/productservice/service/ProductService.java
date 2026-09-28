@@ -5,6 +5,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.ecommerce.productservice.dto.ProductDto;
+import com.ecommerce.productservice.mapper.ProductMapper;
 import com.ecommerce.productservice.model.Product;
 import com.ecommerce.productservice.repository.ProductRepository;
 
@@ -15,66 +17,74 @@ import java.util.List;
 public class ProductService {
 
     private final ProductRepository productRepository;
+    private final ProductMapper productMapper;
 
     @Transactional(readOnly = true)
-    public List<Product> findAll() {
-        return productRepository.findAll();
+    public List<ProductDto> findAll() {
+        return productRepository.findAll().stream()
+                .map(productMapper::toDto)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public ProductDto findById(String id) {
+        return productMapper.toDto(getEntity(id));
     }
 
     @Transactional
-    public Product findById(String id) {
-        return productRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Product not found: " + id));
+    public ProductDto create(ProductDto productDto) {
+        Product product = productMapper.toEntity(productDto);
+        return productMapper.toDto(productRepository.save(product));
     }
 
     @Transactional
-    public Product create(Product product) {
-        return productRepository.save(product);
-    }
-
-    @Transactional
-    public Product update(String id, Product productDetails) {
-        Product product = findById(id);
-        product.setName(productDetails.getName());
-        product.setDescription(productDetails.getDescription());
-        product.setPrice(productDetails.getPrice());
-        product.setStockQuantity(productDetails.getStockQuantity());
-        product.setCategory(productDetails.getCategory());
-        product.setImageUrl(productDetails.getImageUrl());
-        return productRepository.save(product);
+    public ProductDto update(String id, ProductDto productDto) {
+        Product product = getEntity(id);
+        product.setName(productDto.name());
+        product.setDescription(productDto.description());
+        product.setPrice(productDto.price());
+        product.setStockQuantity(productDto.stockQuantity());
+        product.setCategory(productDto.category());
+        product.setImageUrl(productDto.imageUrl());
+        return productMapper.toDto(productRepository.save(product));
     }
 
     @Transactional
     public void delete(String id) {
-        Product product = findById(id);
-        productRepository.delete(product);
+        productRepository.delete(getEntity(id));
     }
 
     @Transactional(readOnly = true)
-    public List<Product> findByCategory(String category) {
-        return productRepository.findByCategory(category);
+    public List<ProductDto> findByCategory(String category) {
+        return productRepository.findByCategory(category).stream()
+                .map(productMapper::toDto)
+                .toList();
     }
 
     @Transactional
-    public Product updateStock(String id, Integer quantity) {
-        Product product = findById(id);
+    public ProductDto updateStock(String id, Integer quantity) {
+        Product product = getEntity(id);
         product.setStockQuantity(quantity);
-        return productRepository.save(product);
+        return productMapper.toDto(productRepository.save(product));
     }
 
     @Transactional
-    public Product decrementStock(String id, Integer amount) {
-        Product product = findById(id);
+    public ProductDto decrementStock(String id, Integer amount) {
+        Product product = getEntity(id);
 
         int newStock = product.getStockQuantity() - amount;
         if (newStock < 0) {
             throw new IllegalStateException(
                     String.format("Insufficient stock for product %s. Available: %d, Requested: %d",
-                            id, product.getStockQuantity(), amount)
-            );
+                            id, product.getStockQuantity(), amount));
         }
 
         product.setStockQuantity(newStock);
-        return productRepository.save(product);
+        return productMapper.toDto(productRepository.save(product));
+    }
+
+    private Product getEntity(String id) {
+        return productRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Product not found: " + id));
     }
 }

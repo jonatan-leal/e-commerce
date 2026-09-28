@@ -6,7 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import com.ecommerce.productservice.model.Product;
+import com.ecommerce.productservice.dto.ProductDto;
 import com.ecommerce.productservice.service.ProductService;
 
 import java.util.List;
@@ -20,25 +20,25 @@ public class ProductController {
     private final ProductService productService;
 
     @GetMapping
-    public ResponseEntity<List<Product>> getAllProducts() {
+    public ResponseEntity<List<ProductDto>> getAllProducts() {
         return ResponseEntity.ok(productService.findAll());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Product> getProduct(@PathVariable String id) {
+    public ResponseEntity<ProductDto> getProduct(@PathVariable String id) {
         return ResponseEntity.ok(productService.findById(id));
     }
 
     @PostMapping
-    public ResponseEntity<Product> createProduct(@RequestBody @Valid Product product) {
-        Product created = productService.create(product);
+    public ResponseEntity<ProductDto> createProduct(@RequestBody @Valid ProductDto product) {
+        ProductDto created = productService.create(product);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Product> updateProduct(
+    public ResponseEntity<ProductDto> updateProduct(
             @PathVariable String id,
-            @RequestBody @Valid Product product) {
+            @RequestBody @Valid ProductDto product) {
         return ResponseEntity.ok(productService.update(id, product));
     }
 
@@ -49,12 +49,12 @@ public class ProductController {
     }
 
     @GetMapping("/category/{category}")
-    public ResponseEntity<List<Product>> getByCategory(@PathVariable String category) {
+    public ResponseEntity<List<ProductDto>> getByCategory(@PathVariable String category) {
         return ResponseEntity.ok(productService.findByCategory(category));
     }
 
     @PatchMapping("/{id}/stock")
-    public ResponseEntity<Product> updateStock(
+    public ResponseEntity<ProductDto> updateStock(
             @PathVariable String id,
             @RequestBody Map<String, Integer> stockUpdate) {
         Integer quantity = stockUpdate.get("quantity");
@@ -65,7 +65,7 @@ public class ProductController {
     }
 
     @PatchMapping("/{id}/stock/decrement")
-    public ResponseEntity<Product> decrementStock(
+    public ResponseEntity<ProductDto> decrementStock(
             @PathVariable String id,
             @RequestBody Map<String, Integer> request) {
         Integer amount = request.get("amount");
