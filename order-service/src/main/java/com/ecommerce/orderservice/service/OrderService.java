@@ -44,7 +44,6 @@ public class OrderService {
         for (OrderRequestItem requestItem : items) {
             // Llamada síncrona a Product Service via Feign
             ProductDto product = productClient.getProduct(requestItem.productId());
-            IO.println(product);
 
             if (product.stockQuantity() == null || product.stockQuantity() < requestItem.quantity()) {
                 throw new IllegalStateException(
