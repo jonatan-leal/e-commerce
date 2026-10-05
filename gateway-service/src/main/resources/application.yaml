@@ -20,9 +20,8 @@ spring:
             - id: product-service
               uri: lb://product-service
               predicates:
-                - Path=/api/products/**
+                - Path=/api/v1/products/**
               filters:
-                - StripPrefix=1
                 - name: CircuitBreaker
                   args:
                     name: productCircuitBreaker
@@ -32,9 +31,8 @@ spring:
             - id: order-service
               uri: lb://order-service
               predicates:
-                - Path=/api/orders/**
+                - Path=/api/v1/orders/**
               filters:
-                - StripPrefix=1
                 - name: CircuitBreaker
                   args:
                     name: orderCircuitBreaker

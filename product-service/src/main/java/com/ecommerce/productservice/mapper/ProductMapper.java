@@ -2,18 +2,44 @@ package com.ecommerce.productservice.mapper;
 
 import com.ecommerce.productservice.dto.ProductDto;
 import com.ecommerce.productservice.model.Product;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.MappingConstants;
+import org.springframework.stereotype.Component;
 
-@Mapper(componentModel = MappingConstants.ComponentModel.SPRING)
-public interface ProductMapper {
+// Mapeo escrito a mano y no con MapStruct: con Lombok + MapStruct + JDK 25 el
+// .class generado pierde "implements ProductMapper" de forma intermitente y
+// Spring deja de encontrar el bean. Ver AGENTS.md (Known gaps).
+@Component
+public class ProductMapper {
 
-    ProductDto toDto(Product product);
+    public ProductDto toDto(Product product) {
+        if (product == null) {
+            return null;
+        }
+        return new ProductDto(
+                product.getId(),
+                product.getName(),
+                product.getDescription(),
+                product.getPrice(),
+                product.getStockQuantity(),
+                product.getCategory(),
+                product.getImageUrl(),
+                product.getCreatedAt(),
+                product.getUpdatedAt()
+        );
+    }
 
-    @Mapping(target = "createdAt", ignore = true)
-    @Mapping(target = "updatedAt", ignore = true)
-    @Mapping(target = "version", ignore = true)
-    @Mapping(target = "stockQuantity", defaultValue = "0")
-    Product toEntity(ProductDto productDto);
+    public Product toEntity(ProductDto productDto) {
+        if (productDto == null) {
+            return null;
+        }
+        return Product.builder()
+                .id(productDto.id())
+                .name(productDto.name())
+                .description(productDto.description())
+                .price(productDto.price())
+                // defaultValue = "0" en el mapper de MapStruct anterior
+                .stockQuantity(productDto.stockQuantity() != null ? productDto.stockQuantity() : 0)
+                .category(productDto.category())
+                .imageUrl(productDto.imageUrl())
+                .build();
+    }
 }

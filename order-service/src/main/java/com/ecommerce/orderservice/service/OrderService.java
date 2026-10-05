@@ -1,7 +1,12 @@
 package com.ecommerce.orderservice.service;
 
 import com.ecommerce.orderservice.client.ProductClient;
+import com.ecommerce.orderservice.dto.OrderRequestItem;
+import com.ecommerce.orderservice.dto.OrderResponse;
 import com.ecommerce.orderservice.dto.ProductDto;
+import com.ecommerce.orderservice.exception.InsufficientStockException;
+import com.ecommerce.orderservice.exception.OrderNotCancelableException;
+import com.ecommerce.orderservice.mapper.OrderMapper;
 import com.ecommerce.orderservice.model.Order;
 import com.ecommerce.orderservice.model.OrderItem;
 import com.ecommerce.orderservice.repository.OrderRepository;
@@ -21,20 +26,20 @@ public class OrderService {
 
     private final OrderRepository orderRepository;
     private final ProductClient productClient;  // Feign Client
+    private final OrderMapper orderMapper;
 
     @Transactional(readOnly = true)
-    public List<Order> findAll() {
-        return orderRepository.findAll();
+    public List<OrderResponse> findAll() {
+        return orderMapper.toDtoList(orderRepository.findAll());
     }
 
     @Transactional(readOnly = true)
-    public Order findById(String id) {
-        return orderRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Order not found: " + id));
+    public OrderResponse findById(String id) {
+        return orderMapper.toDto(getEntity(id));
     }
 
     @Transactional
-    public Order createOrder(String customerId, List<OrderRequestItem> items) {
+    public OrderResponse createOrder(String customerId, List<OrderRequestItem> items) {
         Order order = Order.builder()
                 .customerId(customerId)
                 .status(Order.OrderStatus.PENDING)
@@ -43,12 +48,14 @@ public class OrderService {
         // Validar stock y construir items
         for (OrderRequestItem requestItem : items) {
             // Llamada síncrona a Product Service via Feign
-            ProductDto product = productClient.getProduct(requestItem.productId());
+            ProductDto product = productClient.getProduct(requestItem.productId()).data();
 
             if (product.stockQuantity() == null || product.stockQuantity() < requestItem.quantity()) {
-                throw new IllegalStateException(
-                        String.format("Insufficient stock for product %s. Available: %d, Requested: %d",
-                                requestItem.productId(), product.stockQuantity(), requestItem.quantity())
+                throw new InsufficientStockException(
+                        String.format("Insufficient stock for product %s. Available: %s, Requested: %d",
+                                requestItem.productId(),
+                                product.stockQuantity() == null ? 0 : product.stockQuantity(),
+                                requestItem.quantity())
                 );
             }
 
@@ -79,28 +86,29 @@ public class OrderService {
         savedOrder.setStatus(Order.OrderStatus.CONFIRMED);
 
         log.info("Order {} created successfully for customer {}", savedOrder.getId(), customerId);
-        return orderRepository.save(savedOrder);
+        return orderMapper.toDto(orderRepository.save(savedOrder));
     }
 
     @Transactional
-    public Order updateStatus(String id, Order.OrderStatus newStatus) {
-        Order order = findById(id);
+    public OrderResponse updateStatus(String id, Order.OrderStatus newStatus) {
+        Order order = getEntity(id);
         order.setStatus(newStatus);
-        return orderRepository.save(order);
+        return orderMapper.toDto(orderRepository.save(order));
     }
 
     @Transactional
     public void cancelOrder(String id) {
-        Order order = findById(id);
+        Order order = getEntity(id);
         if (order.getStatus() == Order.OrderStatus.DELIVERED) {
-            throw new IllegalStateException("Cannot cancel delivered order");
+            throw new OrderNotCancelableException("Cannot cancel delivered order");
         }
         order.setStatus(Order.OrderStatus.CANCELLED);
         orderRepository.save(order);
         log.info("Order {} cancelled", id);
     }
 
-    // Record para recibir items del controller
-    public record OrderRequestItem(String productId, Integer quantity) {
+    private Order getEntity(String id) {
+        return orderRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Order not found: " + id));
     }
 }

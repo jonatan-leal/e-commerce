@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.ecommerce.productservice.dto.ProductDto;
+import com.ecommerce.productservice.exception.InsufficientStockException;
 import com.ecommerce.productservice.mapper.ProductMapper;
 import com.ecommerce.productservice.model.Product;
 import com.ecommerce.productservice.repository.ProductRepository;
@@ -74,7 +75,7 @@ public class ProductService {
 
         int newStock = product.getStockQuantity() - amount;
         if (newStock < 0) {
-            throw new IllegalStateException(
+            throw new InsufficientStockException(
                     String.format("Insufficient stock for product %s. Available: %d, Requested: %d",
                             id, product.getStockQuantity(), amount));
         }
