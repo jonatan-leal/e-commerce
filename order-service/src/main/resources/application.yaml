@@ -55,4 +55,4 @@ management:
 
 logging:
   level:
-    com.ecommerce.order.client: DEBUG
+    com.ecommerce.orderservice: DEBUG
